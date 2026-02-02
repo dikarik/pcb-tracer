@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "pcb-tracer",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
