@@ -14,19 +14,22 @@
 #include "ConfigDialog.h"
 #include "ConnectionAnalyzer.h"
 
-MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent)
-    , m_windowBaseTitle("PCB Tracer")
-    , m_currentFilePath("")
-    , m_changesSinceLastAutosave(false)
-    , m_wasJustAutosaved(false)
+/*
+ * Функция MainWindow::MainWindow - конструктор главного окна
+ * Входные параметры:
+ *   parent - родительский виджет
+ * Выходные данные:
+ *   отсутствуют
+ */
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent), m_windowBaseTitle("PCB Tracer"), m_currentFilePath(""), m_changesSinceLastAutosave(false), m_wasJustAutosaved(false)
 {
     // Create widgets
-    QStatusBar* statusBar = new QStatusBar(this);
+    QStatusBar *statusBar = new QStatusBar(this);
     m_editor = Editor::instance();
     m_editor->setStatusBar(statusBar);
     setCurrentFilePath("");
-    
+
     // Create toolbar
     m_toolbar = new QToolBar(this);
     m_sideToolbar = new QToolBar(this);
@@ -46,77 +49,76 @@ MainWindow::MainWindow(QWidget* parent)
     m_editor->m_colorBox = m_colorBox;
 
     // Create menu bar
-    QMenuBar* menuBar = this->menuBar();
+    QMenuBar *menuBar = this->menuBar();
 
     // Add menus
-    QMenu* fileMenu = menuBar->addMenu("File");
-    QMenu* editMenu = menuBar->addMenu("Edit");
-    QMenu* pcbMenu = menuBar->addMenu("PCB");
-    QMenu* viewMenu = menuBar->addMenu("View");
+    QMenu *fileMenu = menuBar->addMenu("File");
+    QMenu *editMenu = menuBar->addMenu("Edit");
+    QMenu *pcbMenu = menuBar->addMenu("PCB");
+    QMenu *viewMenu = menuBar->addMenu("View");
 
     // Add menu actions
-    QAction* setFrontSideImageAction = new QAction("Set front side image", this);
+    QAction *setFrontSideImageAction = new QAction("Set front side image", this);
     connect(setFrontSideImageAction, &QAction::triggered, this, &MainWindow::setFrontSideImage);
     pcbMenu->addAction(setFrontSideImageAction);
 
-    QAction* setBackSideImageAction = new QAction("Set back side image", this);
+    QAction *setBackSideImageAction = new QAction("Set back side image", this);
     connect(setBackSideImageAction, &QAction::triggered, this, &MainWindow::setBackSideImage);
     pcbMenu->addAction(setBackSideImageAction);
 
     pcbMenu->addSeparator();
-    QAction* openPreferencesAction = new QAction("Preferences", this);
+    QAction *openPreferencesAction = new QAction("Preferences", this);
     connect(openPreferencesAction, &QAction::triggered, this, &MainWindow::openConfigDialog);
     pcbMenu->addAction(openPreferencesAction);
 
     pcbMenu->addSeparator();
-    QAction* viewConnectionsAction = new QAction("View Connections", this);
+    QAction *viewConnectionsAction = new QAction("View Connections", this);
     connect(viewConnectionsAction, &QAction::triggered, this, &MainWindow::viewConnections);
     pcbMenu->addAction(viewConnectionsAction);
 
-    QAction* newAction = new QAction("New", this);
+    QAction *newAction = new QAction("New", this);
     connect(newAction, &QAction::triggered, this, &MainWindow::newProject);
     fileMenu->addAction(newAction);
 
-    QAction* loadAction = new QAction("Load", this);
+    QAction *loadAction = new QAction("Load", this);
     connect(loadAction, &QAction::triggered, this, &MainWindow::handleLoadProject);
     fileMenu->addAction(loadAction);
 
-    QAction* saveAction = new QAction("Save", this);
+    QAction *saveAction = new QAction("Save", this);
     connect(saveAction, &QAction::triggered, this, &MainWindow::saveProject);
     fileMenu->addAction(saveAction);
 
-    QAction* saveAsAction = new QAction("Save As", this);
+    QAction *saveAsAction = new QAction("Save As", this);
     connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveProjectAs);
     fileMenu->addAction(saveAsAction);
 
     fileMenu->addSeparator();
 
-    QAction* exitAction = new QAction("Exit", this);
+    QAction *exitAction = new QAction("Exit", this);
     connect(exitAction, &QAction::triggered, this, &MainWindow::exit);
     fileMenu->addAction(exitAction);
 
-
-    QAction* undoAction = new QAction("Undo", this);
+    QAction *undoAction = new QAction("Undo", this);
     undoAction->setShortcut(Qt::Key_Z);
     connect(undoAction, &QAction::triggered, &(m_editor->m_undoStack), &QUndoStack::undo);
     editMenu->addAction(undoAction);
 
-    QAction* redoAction = new QAction("Redo", this);
+    QAction *redoAction = new QAction("Redo", this);
     redoAction->setShortcut(Qt::Key_Y);
     connect(redoAction, &QAction::triggered, &(m_editor->m_undoStack), &QUndoStack::redo);
     editMenu->addAction(redoAction);
 
     editMenu->addSeparator();
 
-    QAction* resetLinkWidthAction = new QAction("Reset Track Width", this);
+    QAction *resetLinkWidthAction = new QAction("Reset Track Width", this);
     connect(resetLinkWidthAction, &QAction::triggered, this, &MainWindow::resetLinkWidth);
     editMenu->addAction(resetLinkWidthAction);
 
     // Create layout and add widgets
-    QWidget* centralWidget = new QWidget(this);
-    QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
-    QHBoxLayout* topLayout = new QHBoxLayout();
-    QHBoxLayout* bottomLayout = new QHBoxLayout();
+    QWidget *centralWidget = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
+    QHBoxLayout *topLayout = new QHBoxLayout();
+    QHBoxLayout *bottomLayout = new QHBoxLayout();
 
     topLayout->addWidget(m_toolbar);
     topLayout->addStretch();
@@ -141,11 +143,11 @@ MainWindow::MainWindow(QWidget* parent)
 
     resize(800, 600);
 
-    QAction* toggleAction = m_sidebar->toggleViewAction();
+    QAction *toggleAction = m_sidebar->toggleViewAction();
     viewMenu->addAction(toggleAction);
     viewMenu->addSeparator();
     // Add the About action to the View menu
-    QAction* aboutAction = new QAction("About", this);
+    QAction *aboutAction = new QAction("About", this);
     connect(aboutAction, &QAction::triggered, this, &MainWindow::showAboutDialog);
     viewMenu->addAction(aboutAction);
 
@@ -154,44 +156,91 @@ MainWindow::MainWindow(QWidget* parent)
     connect(m_autoSaveTimer, &QTimer::timeout, this, &MainWindow::autoSaveProject);
     m_autoSaveTimer->start(5 * 60 * 1000); // 5 minutes in milliseconds
 
-    connect(&(m_editor->m_undoStack), &QUndoStack::indexChanged, this, [this]() {
+    connect(&(m_editor->m_undoStack), &QUndoStack::indexChanged, this, [this]()
+            {
         m_changesSinceLastAutosave = true; // Mark changes when the undo stack index changes
-        m_wasJustAutosaved = false;
-    });
+        m_wasJustAutosaved = false; });
 }
 
-MainWindow::~MainWindow() {
+/*
+ * Функция MainWindow::~MainWindow - деструктор главного окна
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+MainWindow::~MainWindow()
+{
     qDebug() << "MainWindow::~MainWindow()";
     delete m_editor;
     delete m_sidebar;
     delete m_colorBox;
     delete m_slider;
     delete m_toolbar;
-    delete m_sideToolbar;    
+    delete m_sideToolbar;
 }
 
+/*
+ * Функция MainWindow::sliderValueChanged - обработчик изменения значения слайдера
+ * Входные параметры:
+ *   value - новое значение слайдера
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::sliderValueChanged(int value)
 {
-    m_editor->m_guideTool->setLayerOpacity(LinkSide::BACK, (100-value)/100.0);
+    m_editor->m_guideTool->setLayerOpacity(LinkSide::BACK, (100 - value) / 100.0);
 }
 
+/*
+ * Функция MainWindow::exit - выход из приложения
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::exit()
 {
     close();
 }
 
-void MainWindow::viewConnections() {
+/*
+ * Функция MainWindow::viewConnections - отображение соединений
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::viewConnections()
+{
     ConnectionAnalyzer::getConnections();
 }
 
-void MainWindow::cleanProject() {
+/*
+ * Функция MainWindow::cleanProject - очистка проекта
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::cleanProject()
+{
     Editor::instance()->clean();
     setCurrentFilePath("");
 }
 
-bool MainWindow::promptForUnsavedChanges() {
+/*
+ * Функция MainWindow::promptForUnsavedChanges - запрос о несохраненных изменениях
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   bool - true, если можно продолжить, false если нужно отменить действие
+ */
+bool MainWindow::promptForUnsavedChanges()
+{
     qDebug() << "was just auto saved" << m_wasJustAutosaved;
-    if (m_wasJustAutosaved || !Editor::instance()->m_undoStack.isClean()) {
+    if (m_wasJustAutosaved || !Editor::instance()->m_undoStack.isClean())
+    {
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Unsaved Changes",
                                                                   "You have unsaved changes. Do you want to discard them?",
                                                                   QMessageBox::Yes | QMessageBox::No,
@@ -201,78 +250,142 @@ bool MainWindow::promptForUnsavedChanges() {
     return true;
 }
 
-void MainWindow::newProject() {
-    if (promptForUnsavedChanges()) {
+/*
+ * Функция MainWindow::newProject - создание нового проекта
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::newProject()
+{
+    if (promptForUnsavedChanges())
+    {
         cleanProject();
     }
 }
 
+/*
+ * Функция MainWindow::saveProject - сохранение проекта
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::saveProject()
 {
-    if (!m_currentFilePath.isEmpty()) {
+    if (!m_currentFilePath.isEmpty())
+    {
         saveToFile(m_currentFilePath);
-    } else {
+    }
+    else
+    {
         saveProjectAs();
     }
 }
 
+/*
+ * Функция MainWindow::saveProjectAs - сохранение проекта с новым именем
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::saveProjectAs()
 {
     QString fileFilter = "PCB JSON Files (*.jpcb);;PCB Binary Files (*.pcb);;PCB Files (*.pcb *.jpcb)";
     QString filePath = QFileDialog::getSaveFileName(this, "Save PCB work", "", fileFilter);
-    if (!filePath.isEmpty()) {
+    if (!filePath.isEmpty())
+    {
         QString oldFilePath = m_currentFilePath;
         saveToFile(filePath);
-        if(oldFilePath.isEmpty()) {
+        if (oldFilePath.isEmpty())
+        {
             // is we're not coming from a named file, rename the current generic autosave file
             QString oldAutosavePath = getAutosaveFilePath(oldFilePath);
-            renameToAutosaveFile(oldAutosavePath);    
+            renameToAutosaveFile(oldAutosavePath);
         }
     }
 }
 
-void MainWindow::saveToFile(const QString& filePath, bool isAutoSave)
+/*
+ * Функция MainWindow::saveToFile - сохранение в файл
+ * Входные параметры:
+ *   filePath - путь к файлу для сохранения
+ *   isAutoSave - флаг автоматического сохранения
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::saveToFile(const QString &filePath, bool isAutoSave)
 {
     bool success = false;
     QString actualFilePath = filePath;
 
-    if (actualFilePath.endsWith(".jpcb", Qt::CaseInsensitive)) {
+    if (actualFilePath.endsWith(".jpcb", Qt::CaseInsensitive))
+    {
         success = SceneLoader::saveSceneToJson(actualFilePath);
-    } else if (actualFilePath.endsWith(".pcb", Qt::CaseInsensitive)) {
+    }
+    else if (actualFilePath.endsWith(".pcb", Qt::CaseInsensitive))
+    {
         success = SceneLoaderBinary::saveSceneToBinary(actualFilePath);
-    } else {
+    }
+    else
+    {
         // If no extension was provided, default to .pcb
         actualFilePath += ".pcb";
         success = SceneLoaderBinary::saveSceneToBinary(actualFilePath);
     }
 
-    if (success) {
-        if (!isAutoSave) {            
+    if (success)
+    {
+        if (!isAutoSave)
+        {
             setCurrentFilePath(actualFilePath);
             m_wasJustAutosaved = false; // so we don't prompt for unsaved changes due to have loaded an autosave
             Editor::instance()->m_undoStack.setClean();
             m_editor->showStatusMessage("Project saved successfully.");
         }
-    } else {
+    }
+    else
+    {
         QMessageBox::critical(this, "Save Failed", "Failed to save the project. Please try again.");
     }
 }
 
-void MainWindow::handleLoadProject() {
-    if (promptForUnsavedChanges()) {
+/*
+ * Функция MainWindow::handleLoadProject - обработчик загрузки проекта
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::handleLoadProject()
+{
+    if (promptForUnsavedChanges())
+    {
         loadProject();
     }
 }
 
-bool MainWindow::checkAndLoadAutosave(QString originalFilePath) {
+/*
+ * Функция MainWindow::checkAndLoadAutosave - проверка и загрузка автосохранения
+ * Входные параметры:
+ *   originalFilePath - путь к оригинальному файлу
+ * Выходные данные:
+ *   bool - true, если автосохранение было загружено, false в противном случае
+ */
+bool MainWindow::checkAndLoadAutosave(QString originalFilePath)
+{
     QString tempFilePath = getAutosaveFilePath(originalFilePath);
-    if (QFile::exists(tempFilePath)) {
+    if (QFile::exists(tempFilePath))
+    {
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Load Autosaved Version",
                                                                   "Do you want to load the autosaved version?",
                                                                   QMessageBox::Yes | QMessageBox::No,
                                                                   QMessageBox::No);
 
-        if (reply == QMessageBox::Yes) {
+        if (reply == QMessageBox::Yes)
+        {
             loadProjectFromFile(tempFilePath, true); // load the autosaved version
             m_wasJustAutosaved = true;
             return true; // indicate the user said yes
@@ -281,67 +394,119 @@ bool MainWindow::checkAndLoadAutosave(QString originalFilePath) {
     return false; // indicate that no autosave was loaded
 }
 
-void MainWindow::loadProject() {
+/*
+ * Функция MainWindow::loadProject - загрузка проекта
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::loadProject()
+{
     QString fileFilter = "PCB JSON Files (*.jpcb);;PCB Binary Files (*.pcb);;PCB Files (*.pcb *.jpcb)";
     QString filePath = QFileDialog::getOpenFileName(this, "Load PCB work", "", fileFilter);
-    if (filePath.isEmpty()) {
+    if (filePath.isEmpty())
+    {
         return; // early return if no file is selected
     }
 
-    if (!checkAndLoadAutosave(filePath)) {
+    if (!checkAndLoadAutosave(filePath))
+    {
         // load the original file if no autosave is loaded
         loadProjectFromFile(filePath);
     }
 }
 
-void MainWindow::loadProjectFromFile(const QString& filePath, bool isAutoLoad) {
+/*
+ * Функция MainWindow::loadProjectFromFile - загрузка проекта из файла
+ * Входные параметры:
+ *   filePath - путь к файлу для загрузки
+ *   isAutoLoad - флаг автоматической загрузки
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::loadProjectFromFile(const QString &filePath, bool isAutoLoad)
+{
     bool success = false;
     Editor::instance()->clean();
-    if (filePath.endsWith(".jpcb", Qt::CaseInsensitive)) {
+    if (filePath.endsWith(".jpcb", Qt::CaseInsensitive))
+    {
         success = SceneLoader::loadSceneFromJson(filePath);
-    } else if (filePath.endsWith(".pcb", Qt::CaseInsensitive)) {
+    }
+    else if (filePath.endsWith(".pcb", Qt::CaseInsensitive))
+    {
         success = SceneLoaderBinary::loadSceneFromBinary(filePath);
-    } else {
+    }
+    else
+    {
         QMessageBox::warning(this, "Unsupported File", "The selected file format is not supported.");
         return;
     }
 
-    if (success) {
-        if(!isAutoLoad) {
+    if (success)
+    {
+        if (!isAutoLoad)
+        {
             setCurrentFilePath(filePath);
-        } else {
+        }
+        else
+        {
             // set the currentFilePath to the autosave file path without the~suffix
             QFileInfo fileInfo(filePath);
             QString originalFilePath = fileInfo.dir().absoluteFilePath(fileInfo.fileName().mid(1));
-            setCurrentFilePath(originalFilePath);            
+            setCurrentFilePath(originalFilePath);
         }
         m_editor->showStatusMessage("Project loaded successfully.");
         // QMessageBox::information(this, "Load Successful", "The project was loaded successfully.");
-    } else {
+    }
+    else
+    {
         QMessageBox::critical(this, "Load Failed", "Failed to load the project. Please check the file and try again.");
     }
 }
 
+/*
+ * Функция MainWindow::setFrontSideImage - установка изображения лицевой стороны платы
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::setFrontSideImage()
 {
     QString filePath = QFileDialog::getOpenFileName(this, "Open Image");
-    if (!filePath.isEmpty()) {
+    if (!filePath.isEmpty())
+    {
         m_editor->m_guideTool->setImageLayer(LinkSide::FRONT, filePath);
     }
-
 }
 
-void MainWindow::setBackSideImage() {    
+/*
+ * Функция MainWindow::setBackSideImage - установка изображения обратной стороны платы
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::setBackSideImage()
+{
     QString filePath = QFileDialog::getOpenFileName(this, "Open Image");
-    if (!filePath.isEmpty()) {
+    if (!filePath.isEmpty())
+    {
         m_editor->m_guideTool->setImageLayer(LinkSide::BACK, filePath);
     }
-
 }
 
+/*
+ * Функция MainWindow::createToolbarActions - создание действий для панели инструментов
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::createToolbarActions()
 {
-    QActionGroup* actionGroup = new QActionGroup(this);
+    QActionGroup *actionGroup = new QActionGroup(this);
     actionGroup->setExclusive(true);
 
     m_addTrackAction = actionGroup->addAction("Tracks");
@@ -360,11 +525,11 @@ void MainWindow::createToolbarActions()
     connect(m_addNotesAction, &QAction::toggled, this, &MainWindow::addNotesButtonAction);
     m_toolbar->addAction(m_addNotesAction);
 
-    QAction* zoomInAction = new QAction(QIcon::fromTheme("zoom-in"), "Zoom In", this);
+    QAction *zoomInAction = new QAction(QIcon::fromTheme("zoom-in"), "Zoom In", this);
     connect(zoomInAction, &QAction::triggered, this, &MainWindow::zoomIn);
     m_toolbar->addAction(zoomInAction);
 
-    QAction* zoomOutAction = new QAction(QIcon::fromTheme("zoom-out"), "Zoom Out", this);
+    QAction *zoomOutAction = new QAction(QIcon::fromTheme("zoom-out"), "Zoom Out", this);
     connect(zoomOutAction, &QAction::triggered, this, &MainWindow::zoomOut);
     m_toolbar->addAction(zoomOutAction);
 
@@ -378,7 +543,7 @@ void MainWindow::createToolbarActions()
     connect(m_flipVAction, &QAction::triggered, m_editor, &Editor::flipVertical);
     m_toolbar->addAction(m_flipVAction);
 
-    QActionGroup* sideGroup = new QActionGroup(this);
+    QActionGroup *sideGroup = new QActionGroup(this);
     sideGroup->setExclusive(false);
 
     m_frontSideAction = sideGroup->addAction("Front");
@@ -394,108 +559,222 @@ void MainWindow::createToolbarActions()
     m_sideToolbar->addAction(m_backSideAction);
 }
 
+/*
+ * Функция MainWindow::resetLinkWidth - сброс ширины трасс
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::resetLinkWidth()
 {
-    //m_editor->resetLinkWidth();
+    // m_editor->resetLinkWidth();
 }
 
+/*
+ * Функция MainWindow::backSideToggleButtonAction - обработчик переключения видимости обратной стороны
+ * Входные параметры:
+ *   checked - состояние переключателя
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::backSideToggleButtonAction(bool checked)
 {
     m_editor->toggleLayerVisibility(LinkSide::BACK, checked);
 }
 
+/*
+ * Функция MainWindow::frontSideToggleButtonAction - обработчик переключения видимости лицевой стороны
+ * Входные параметры:
+ *   checked - состояние переключателя
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::frontSideToggleButtonAction(bool checked)
 {
     m_editor->toggleLayerVisibility(LinkSide::FRONT, checked);
 }
 
+/*
+ * Функция MainWindow::addTrackButtonAction - обработчик кнопки добавления трасс
+ * Входные параметры:
+ *   checked - состояние кнопки
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::addTrackButtonAction(bool checked)
 {
-    if (checked) {
+    if (checked)
+    {
         qDebug() << "Add Track mode activated";
         m_editor->enterTrackMode();
     }
 }
 
+/*
+ * Функция MainWindow::addComponentButtonAction - обработчик кнопки добавления компонентов
+ * Входные параметры:
+ *   checked - состояние кнопки
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::addComponentButtonAction(bool checked)
 {
-    if (checked) {
+    if (checked)
+    {
         qDebug() << "Add Component mode activated";
         m_editor->enterComponentMode();
     }
 }
 
+/*
+ * Функция MainWindow::addNotesButtonAction - обработчик кнопки добавления заметок
+ * Входные параметры:
+ *   checked - состояние кнопки
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::addNotesButtonAction(bool checked)
 {
-    if (checked) {
+    if (checked)
+    {
         qDebug() << "Add Notes mode activated";
         m_editor->enterNotesMode();
     }
 }
 
+/*
+ * Функция MainWindow::zoomIn - увеличение масштаба
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::zoomIn()
 {
-   m_editor->zoomIn();
+    m_editor->zoomIn();
 }
 
+/*
+ * Функция MainWindow::zoomOut - уменьшение масштаба
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::zoomOut()
 {
     m_editor->zoomOut();
 }
 
+/*
+ * Функция MainWindow::openConfigDialog - открытие диалога настроек
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::openConfigDialog()
 {
-        ConfigDialog dialog(this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QVariantMap newConfig = dialog.getConfigData();
-            Config::instance()->updateFromConfigDialog(newConfig);
-            Config::instance()->apply();
-        }
+    ConfigDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        QVariantMap newConfig = dialog.getConfigData();
+        Config::instance()->updateFromConfigDialog(newConfig);
+        Config::instance()->apply();
+    }
 }
 
-void MainWindow::setCurrentFilePath(const QString& filePath)
+/*
+ * Функция MainWindow::setCurrentFilePath - установка текущего пути к файлу
+ * Входные параметры:
+ *   filePath - путь к файлу
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::setCurrentFilePath(const QString &filePath)
 {
     m_currentFilePath = filePath;
-    if(m_currentFilePath.isEmpty()) {
+    if (m_currentFilePath.isEmpty())
+    {
         setWindowTitle(m_windowBaseTitle);
-    } else {
+    }
+    else
+    {
         setWindowTitle(m_windowBaseTitle + " - " + m_currentFilePath);
     }
 }
 
-void MainWindow::closeEvent(QCloseEvent* event)
+/*
+ * Функция MainWindow::closeEvent - обработчик события закрытия окна
+ * Входные параметры:
+ *   event - событие закрытия окна
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (promptForUnsavedChanges()) {
+    if (promptForUnsavedChanges())
+    {
         removeAutosaveFile();
         event->accept();
-    } else {
+    }
+    else
+    {
         event->ignore();
     }
 }
 
+/*
+ * Функция MainWindow::keyPressEvent - обработчик нажатия клавиш
+ * Входные параметры:
+ *   event - событие нажатия клавиши
+ * Выходные данные:
+ *   отсутствуют
+ */
 // TODO: check this implementation, sometimes keys are not being captured correctly
-void MainWindow::keyPressEvent(QKeyEvent* event)
+void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_E && event->modifiers() & Qt::ControlModifier) {
+    if (event->key() == Qt::Key_E && event->modifiers() & Qt::ControlModifier)
+    {
         ConnectionAnalyzer::getConnections();
     }
-    else if (event->key() == Qt::Key_C && event->modifiers() & Qt::ControlModifier) {
+    else if (event->key() == Qt::Key_C && event->modifiers() & Qt::ControlModifier)
+    {
         Editor::instance()->enterComponentMode();
         m_addComponentAction->toggle();
-    } else if (event->key() == Qt::Key_T && event->modifiers() & Qt::ControlModifier) {
+    }
+    else if (event->key() == Qt::Key_T && event->modifiers() & Qt::ControlModifier)
+    {
         Editor::instance()->enterTrackMode();
         m_addTrackAction->toggle();
-    } else if (event->key() == Qt::Key_N && event->modifiers() & Qt::ControlModifier) {
+    }
+    else if (event->key() == Qt::Key_N && event->modifiers() & Qt::ControlModifier)
+    {
         Editor::instance()->enterNotesMode();
         m_addNotesAction->toggle();
     }
 }
 
-void MainWindow::keyReleaseEvent(QKeyEvent* event)
+/*
+ * Функция MainWindow::keyReleaseEvent - обработчик отпускания клавиш
+ * Входные параметры:
+ *   event - событие отпускания клавиши
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
 {
-   // m_editor->keyReleaseEvent(event);
+    // m_editor->keyReleaseEvent(event);
 }
 
+/*
+ * Функция MainWindow::showAboutDialog - отображение диалога "О программе"
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
 void MainWindow::showAboutDialog()
 {
     QMessageBox aboutBox;
@@ -510,46 +789,90 @@ void MainWindow::showAboutDialog()
     aboutBox.exec();
 }
 
-
-QString MainWindow::getAutosaveFilePath(QString filePath) {
+/*
+ * Функция MainWindow::getAutosaveFilePath - получение пути к файлу автосохранения
+ * Входные параметры:
+ *   filePath - путь к оригинальному файлу
+ * Выходные данные:
+ *   QString - путь к файлу автосохранения
+ */
+QString MainWindow::getAutosaveFilePath(QString filePath)
+{
     QString tempFilePath;
-    if (!filePath.isEmpty()) {
+    if (!filePath.isEmpty())
+    {
         QFileInfo fileInfo(filePath);
         tempFilePath = fileInfo.dir().absoluteFilePath("~" + fileInfo.fileName());
-    } else {
+    }
+    else
+    {
         tempFilePath = QDir::currentPath() + "/~autosave.jpcb";
     }
     return tempFilePath;
 }
 
-void MainWindow::removeAutosaveFile() {
+/*
+ * Функция MainWindow::removeAutosaveFile - удаление файла автосохранения
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::removeAutosaveFile()
+{
     QString tempFilePath = getAutosaveFilePath(m_currentFilePath);
     // check if it exists before trying to delete it
-    if(QFile::exists(tempFilePath)) {
+    if (QFile::exists(tempFilePath))
+    {
         QFile::remove(tempFilePath);
     }
 }
 
-void MainWindow::renameToAutosaveFile(QString filePath) {
+/*
+ * Функция MainWindow::renameToAutosaveFile - переименование в файл автосохранения
+ * Входные параметры:
+ *   filePath - путь к файлу для переименования
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::renameToAutosaveFile(QString filePath)
+{
     QString tempFilePath = getAutosaveFilePath(m_currentFilePath);
     // check if it exists before trying to delete it
-    if(QFile::exists(filePath)) {
+    if (QFile::exists(filePath))
+    {
         QFile::rename(filePath, tempFilePath);
     }
 }
 
-
-void MainWindow::autoSaveProject() {
-    if (!m_changesSinceLastAutosave) {
+/*
+ * Функция MainWindow::autoSaveProject - автоматическое сохранение проекта
+ * Входные параметры:
+ *   отсутствуют
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::autoSaveProject()
+{
+    if (!m_changesSinceLastAutosave)
+    {
         qDebug() << "No changes to autosave.";
         return; // don't autosave if there are no changes
     }
     QString tempFilePath = getAutosaveFilePath(m_currentFilePath);
     m_changesSinceLastAutosave = false; // reset the changes flag
-    saveToFile(tempFilePath, true); // save to file as autosave
+    saveToFile(tempFilePath, true);     // save to file as autosave
 }
 
-void MainWindow::showEvent(QShowEvent* event) {
+/*
+ * Функция MainWindow::showEvent - обработчик события отображения окна
+ * Входные параметры:
+ *   event - событие отображения окна
+ * Выходные данные:
+ *   отсутствуют
+ */
+void MainWindow::showEvent(QShowEvent *event)
+{
     QMainWindow::showEvent(event);
     checkAndLoadAutosave("");
 }
